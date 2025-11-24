@@ -30,10 +30,11 @@ def salva_ricerca(url, data_req, snapshot):
     conn.close()
 
 def leggi_cronologia():
-    """Recupera la cronologia"""
+    """Recupera le ultime 50 ricerche dal DB"""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM ricerche ORDER BY timestamp DESC')
+    # Recuperiamo dati ordinati per data decrescente
+    cursor.execute('SELECT url_originale, data_richiesta, snapshot_trovato, timestamp FROM ricerche ORDER BY id DESC LIMIT 50')
     dati = cursor.fetchall()
     conn.close()
     return dati
