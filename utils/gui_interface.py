@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, scrolledtext
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from utils.csv_handler import accoda_su_csv  
 import csv
 from datetime import datetime
 
@@ -130,7 +131,7 @@ class TimeBrowserApp:
 
             # 3. SALVATAGGIO
             salva_ricerca(url, anno, esito_db)
-
+            accoda_su_csv(url, anno, esito_db) 
         except Exception as e:
             self.lbl_status.config(text="❌ Errore critico.")
             messagebox.showerror("Errore", f"Si è verificato un problema:\n{e}")

@@ -2,7 +2,7 @@ import sys
 from utils.whois_handler import ottieni_info_dominio
 from utils.wayback_handler import cerca_snapshot, apri_browser
 from utils.db_handler import salva_ricerca
-
+from utils.csv_handler import accoda_su_csv 
 # Codici colori ANSI per il terminale (funzionano su Linux)
 GREEN = '\033[92m'
 BLUE = '\033[94m'
@@ -76,8 +76,11 @@ def start_cui():
 
             # 5. SALVATAGGIO DB
             salva_ricerca(url, anno, esito_db)
-            print(f"\n{BLUE}[V] Ricerca salvata nel Database.{RESET}\n")
+            print(f"\n{BLUE}Ricerca salvata nel Database.{RESET}\n")
             print("-" * 50)
+            # 6. SALVATAGGIO CSV (Nuovo)
+            accoda_su_csv(url, anno, esito_db)
+            print(f"\n{BLUE}Ricerca salvata nel CSV.{RESET}\n")
 
         except KeyboardInterrupt:
             print("\nUscita forzata.")
