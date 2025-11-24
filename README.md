@@ -53,7 +53,7 @@ Il progetto è stato sviluppato seguendo un'architettura **modulare** e supporta
 
 ---
 
-## 💻 Utilizzo
+## Utilizzo
 
 Il software supporta due modalità di avvio. Assicurati di avere l'ambiente virtuale attivo.
 
