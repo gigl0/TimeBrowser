@@ -10,7 +10,18 @@ from utils.db_handler import salva_ricerca, leggi_cronologia
 from utils.csv_handler import accoda_su_csv
 
 class TimeBrowserApp:
-    def __init__(self, root):
+    """
+    Classe principale per l'interfaccia grafica (GUI) dell'applicazione TimeBrowser.
+    Gestisce il layout, gli eventi utente e l'aggiornamento dei widget.
+    """
+    
+    def __init__(self, root: ttk.Window) -> None:
+        """
+        Inizializza la finestra principale e costruisce i widget.
+
+        Args:
+            root (ttk.Window): L'istanza principale della finestra ttkbootstrap.
+        """
         self.root = root
         self.root.title("TimeBrowser - Analisi Siti Web")
         self.root.geometry("850x750")
@@ -29,7 +40,6 @@ class TimeBrowserApp:
         main_frame.pack(fill="both", expand=True)
 
         # --- SEZIONE 1: INPUT ---
-        # Labelframe raggruppa gli input
         input_box = ttk.Labelframe(main_frame, text=" Ricerca ", padding=15)
         input_box.pack(fill="x", pady=(0, 10))
 
@@ -43,7 +53,7 @@ class TimeBrowserApp:
         self.entry_anno.grid(row=0, column=3, padx=5)
         self.entry_anno.insert(0, "2015")
 
-        # Bottoni (Primary = Blu, Info = Azzurro)
+        # Bottoni
         btn_cerca = ttk.Button(input_box, text="Cerca", command=self.avvia_ricerca, bootstyle="primary")
         btn_cerca.grid(row=0, column=4, padx=15)
 
@@ -54,7 +64,6 @@ class TimeBrowserApp:
         self.lbl_status = ttk.Label(root, text="Pronto.", bootstyle="inverse", padding=5)
         self.lbl_status.pack(side="bottom", fill="x")
 
-        # Barra di caricamento (inizialmente nascosta)
         self.progress = ttk.Progressbar(root, mode='indeterminate', bootstyle="success")
 
         # --- SEZIONE 2: RISULTATI ---
@@ -72,7 +81,6 @@ class TimeBrowserApp:
         right_frame = ttk.Labelframe(result_box, text=" Snapshot Storici ", padding=10)
         right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
 
-        # Lista con scrollbar
         scroll = ttk.Scrollbar(right_frame, bootstyle="round")
         scroll.pack(side="right", fill="y")
         
@@ -82,10 +90,17 @@ class TimeBrowserApp:
         
         scroll.config(command=self.list_snapshot.yview)
 
-        # Variabile per memorizzare i link trovati
         self.lista_dati = []
 
-    def avvia_ricerca(self):
+    def avvia_ricerca(self) -> None:
+        """
+        Callback del pulsante 'Cerca'.
+        Esegue sequenzialmente:
+        1. Query WHOIS
+        2. Query Wayback Machine
+        3. Aggiornamento UI
+        4. Salvataggio su DB e CSV
+        """
         url = self.entry_url.get().strip()
         anno = self.entry_anno.get().strip()
 
@@ -133,11 +148,14 @@ class TimeBrowserApp:
             messagebox.showerror("Errore", str(e))
 
         finally:
-            # Ferma caricamento
             self.progress.stop()
             self.progress.pack_forget()
 
-    def clicca_snapshot(self, event):
+    def clicca_snapshot(self, event: tk.Event) -> None:
+        """
+        Gestisce il doppio click su un elemento della lista snapshot.
+        Apre il link corrispondente nel browser.
+        """
         selezione = self.list_snapshot.curselection()
         if selezione:
             index = selezione[0]
@@ -145,8 +163,11 @@ class TimeBrowserApp:
                 link = self.lista_dati[index]['link']
                 apri_browser(link)
 
-    def apri_cronologia(self):
-        # Finestra popup per vedere il database
+    def apri_cronologia(self) -> None:
+        """
+        Apre una nuova finestra (Toplevel) contenente una Treeview
+        per visualizzare lo storico delle ricerche salvate nel DB.
+        """
         top = ttk.Toplevel(self.root)
         top.title("Cronologia")
         top.geometry("700x400")
@@ -160,23 +181,22 @@ class TimeBrowserApp:
         tree.heading('esito', text='Risultato')
         tree.heading('data', text='Data Ricerca')
 
-        # Larghezza colonne
         tree.column('id', width=40)
         tree.column('url', width=150)
         
-        # Scrollbar verticale
         scroll = ttk.Scrollbar(top, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        # Leggiamo dal DB
         dati = leggi_cronologia()
         for riga in dati:
             tree.insert('', tk.END, values=riga)
 
-    def esporta_csv(self):
-        # Funzione veloce per esportare tutto il DB in un file
+    def esporta_csv(self) -> None:
+        """
+        Esporta l'intero contenuto della cronologia database su un file CSV timestampato.
+        """
         import csv
         filename = f"export_{datetime.now().strftime('%H%M%S')}.csv"
         try:

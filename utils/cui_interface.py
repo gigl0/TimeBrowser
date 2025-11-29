@@ -3,6 +3,7 @@ from utils.whois_handler import ottieni_info_dominio
 from utils.wayback_handler import cerca_snapshot, apri_browser
 from utils.db_handler import salva_ricerca
 from utils.csv_handler import accoda_su_csv 
+
 # Codici colori ANSI per il terminale (funzionano su Linux)
 GREEN = '\033[92m'
 BLUE = '\033[94m'
@@ -11,9 +12,18 @@ RED = '\033[91m'
 RESET = '\033[0m'
 BOLD = '\033[1m'
 
-def start_cui():
+def start_cui() -> None:
     """
-    Avvia l'interfaccia a caratteri (CUI/CLI).
+    Avvia l'interfaccia a caratteri (CUI/CLI) per l'interazione via terminale.
+    
+    Gestisce il ciclo principale (main loop) dell'applicazione in modalità testuale:
+    1. Acquisisce l'input utente (URL e Anno).
+    2. Stampa a video i dati WHOIS formattati.
+    3. Elenca gli snapshot disponibili da Wayback Machine.
+    4. Permette l'apertura del browser tramite selezione numerica.
+    5. Salva i risultati su Database e CSV.
+    
+    La funzione termina solo quando l'utente digita 'q', 'quit' o 'exit'.
     """
     print(f"{BOLD}{BLUE}\n==============================================")
     print(f"   TIMEBROWSER - CUI MODE (Terminale)")

@@ -1,10 +1,20 @@
-import whois # Libreria: python-whois
+import whois
 from urllib.parse import urlparse
 
-def ottieni_info_dominio(url):
+def ottieni_info_dominio(url: str) -> str:
     """
-    Esegue una query WHOIS sul dominio fornito.
-    Ritorna una stringa formattata con i risultati o un messaggio di errore.
+    Esegue una query WHOIS sul dominio fornito per recuperare dati anagrafici.
+
+    Esegue il parsing dell'URL per estrarre il dominio pulito (netloc)
+    e gestisce eventuali formati di dati complessi (liste o date) restituiti
+    dalla libreria whois.
+
+    Args:
+        url (str): L'indirizzo web completo o parziale (es. "https://google.com").
+
+    Returns:
+        str: Una stringa formattata contenente Registrar, Date e Paese,
+             oppure un messaggio di errore leggibile.
     """
     try:
         # 1. Pulizia URL: da "https://www.google.com/search" a "google.com"
@@ -22,7 +32,6 @@ def ottieni_info_dominio(url):
         w = whois.whois(dominio)
 
         # 3. Formattazione Risultati
-        # Gestiamo il fatto che alcuni campi possono essere liste o date singole
         creation_date = w.creation_date
         if isinstance(creation_date, list):
             creation_date = creation_date[0]

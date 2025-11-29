@@ -2,15 +2,23 @@ import requests
 import webbrowser
 import json
 import time
+from typing import List, Dict, Any
 
-def cerca_snapshot(url, anno):
+def cerca_snapshot(url: str, anno: str) -> List[Dict[str, str]]:
     """
-    Cerca le versioni storiche del sito.
-    Se il server è giù, usa dati finti per test.
+    Interroga l'API CDX di Wayback Machine per trovare snapshot storici.
+
+    Args:
+        url (str): Il sito web da cercare.
+        anno (str): L'anno di interesse (YYYY).
+
+    Returns:
+        List[Dict[str, str]]: Una lista di dizionari, dove ogni dizionario
+        contiene la 'data' formattata e il 'link' allo snapshot.
+        Restituisce una lista vuota se non trova nulla.
     """
     api_url = "http://web.archive.org/cdx/search/cdx"
     
-    # User-Agent generico per non essere bloccati
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0"
     }
@@ -30,24 +38,20 @@ def cerca_snapshot(url, anno):
     try:
         response = requests.get(api_url, params=params, headers=headers, timeout=5)
         
-        # Se c'è manutenzione o errore server
         if response.status_code >= 500 or "Maintenance" in response.text:
             return dati_finti(url, anno)
 
         data = response.json()
 
-        # Se non ci sono dati (la lista ha solo l'intestazione)
         if not data or len(data) <= 1:
             return []
 
         risultati = []
-        # Saltiamo la prima riga (header)
         for riga in data[1:]:
             ts = riga[0] # timestamp
             orig = riga[1] # url originale
             
             link = f"https://web.archive.org/web/{ts}/{orig}"
-            # Formattiamo la data: YYYYMMDD... -> GG/MM/AAAA
             data_fmt = f"{ts[6:8]}/{ts[4:6]}/{ts[:4]} - {ts[8:10]}:{ts[10:12]}"
             
             risultati.append({
@@ -61,14 +65,20 @@ def cerca_snapshot(url, anno):
         print(f"[!] Errore API: {e}. Uso dati simulati.")
         return dati_finti(url, anno)
 
-def dati_finti(url, anno):
-    """Restituisce dati di prova se internet non va."""
-    time.sleep(1) # Simula attesa
+def dati_finti(url: str, anno: str) -> List[Dict[str, str]]:
+    """
+    Genera dati simulati (mock) in caso di errore di rete o manutenzione API.
+    
+    Returns:
+        List[Dict[str, str]]: Lista di snapshot fittizi.
+    """
+    time.sleep(1)
     return [
         {'data': f'01/01/{anno} (SIMULATO)', 'link': f'https://google.com'},
         {'data': f'15/06/{anno} (SIMULATO)', 'link': f'https://google.com'},
         {'data': f'31/12/{anno} (SIMULATO)', 'link': f'https://google.com'}
     ]
 
-def apri_browser(url):
+def apri_browser(url: str) -> None:
+    """Apre l'URL specificato nel browser web predefinito del sistema."""
     webbrowser.open(url)

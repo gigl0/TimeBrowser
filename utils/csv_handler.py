@@ -4,10 +4,18 @@ from datetime import datetime
 
 FILENAME = "ricerche.csv"
 
-def accoda_su_csv(url, anno, esito):
+def accoda_su_csv(url: str, anno: str, esito: str) -> None:
     """
-    Aggiunge una riga al file CSV.
-    Se il file non esiste, lo crea con le intestazioni.
+    Salva i dettagli di una ricerca accodandoli al file CSV locale.
+
+    Verifica l'esistenza del file 'ricerche.csv':
+    - Se non esiste, lo crea e scrive la riga di intestazione (Header).
+    - Se esiste, appende la nuova riga con i dati forniti.
+
+    Args:
+        url (str): L'URL del sito cercato.
+        anno (str): L'anno di riferimento della ricerca.
+        esito (str): Il risultato dell'operazione (es. numero snapshot).
     """
     try:
         file_esiste = os.path.isfile(FILENAME)
