@@ -22,10 +22,13 @@ def salva_ricerca(url, data_req, snapshot):
     """Salva una nuova ricerca nel DB"""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+    
+    # CORREZIONE 1: Ho rimosso 'id' dalla lista delle colonne da inserire
     cursor.execute('''
         INSERT INTO ricerche (url_originale, data_richiesta, snapshot_trovato)
         VALUES (?, ?, ?)
     ''', (url, data_req, snapshot))
+    
     conn.commit()
     conn.close()
 
@@ -33,8 +36,10 @@ def leggi_cronologia():
     """Recupera le ultime 50 ricerche dal DB"""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    # Recuperiamo dati ordinati per data decrescente
-    cursor.execute('SELECT url_originale, data_richiesta, snapshot_trovato, timestamp FROM ricerche ORDER BY id DESC LIMIT 50')
+    
+    # CORREZIONE 2: Ho aggiunto 'id' all'inizio per allineare le colonne nella GUI
+    cursor.execute('SELECT id, url_originale, data_richiesta, snapshot_trovato, timestamp FROM ricerche ORDER BY id DESC LIMIT 50')
+    
     dati = cursor.fetchall()
     conn.close()
     return dati
