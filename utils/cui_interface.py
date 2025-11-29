@@ -76,11 +76,11 @@ def start_cui():
 
             # 5. SALVATAGGIO DB
             salva_ricerca(url, anno, esito_db)
-            print(f"\n{BLUE}Ricerca salvata nel Database.{RESET}\n")
+            accoda_su_csv(url, anno, esito_db)
+            print(f"\n{BLUE}[V] Ricerca salvata nel Database e csv.{RESET}\n")
             print("-" * 50)
             # 6. SALVATAGGIO CSV (Nuovo)
-            accoda_su_csv(url, anno, esito_db)
-            print(f"\n{BLUE}Ricerca salvata nel CSV.{RESET}\n")
+            
 
         except KeyboardInterrupt:
             print("\nUscita forzata.")

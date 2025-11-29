@@ -1,192 +1,190 @@
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
 import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from utils.csv_handler import accoda_su_csv  
-import csv
 from datetime import datetime
 
-# Importiamo le nostre funzioni logiche
+# Importiamo le nostre funzioni
 from utils.whois_handler import ottieni_info_dominio
 from utils.wayback_handler import cerca_snapshot, apri_browser
 from utils.db_handler import salva_ricerca, leggi_cronologia
+from utils.csv_handler import accoda_su_csv
 
 class TimeBrowserApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("TimeBrowser - Analizzatore Web Storico")
+        self.root.title("TimeBrowser - Analisi Siti Web")
         self.root.geometry("850x750")
         
-        # --- MENU BAR (Standard TK per compatibilità) ---
+        # --- MENU IN ALTO ---
         menubar = tk.Menu(root)
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Esporta Cronologia in CSV", command=self.esporta_csv)
+        filemenu.add_command(label="Esporta CSV", command=self.esporta_csv)
         filemenu.add_separator()
         filemenu.add_command(label="Esci", command=root.quit)
         menubar.add_cascade(label="File", menu=filemenu)
         root.config(menu=menubar)
 
-        # Container principale con padding
-        main_container = ttk.Frame(root, padding=10)
-        main_container.pack(fill=BOTH, expand=YES)
+        # --- CONTENITORE PRINCIPALE ---
+        main_frame = ttk.Frame(root, padding=10)
+        main_frame.pack(fill="both", expand=True)
 
-        # --- SEZIONE 1: INPUT (Raggruppata in Labelframe) ---
-        # CORREZIONE QUI: Labelframe con la 'f' minuscola
-        input_group = ttk.Labelframe(main_container, text=" Parametri di Ricerca ", padding=15)
-        input_group.pack(fill=X, pady=(0, 10))
+        # --- SEZIONE 1: INPUT ---
+        # Labelframe raggruppa gli input
+        input_box = ttk.Labelframe(main_frame, text=" Ricerca ", padding=15)
+        input_box.pack(fill="x", pady=(0, 10))
 
-        # Grid Layout per input
-        ttk.Label(input_group, text="URL Target:").grid(row=0, column=0, sticky="w", padx=(0, 5))
-        self.entry_url = ttk.Entry(input_group, width=35)
+        ttk.Label(input_box, text="Sito Web:").grid(row=0, column=0, padx=5)
+        self.entry_url = ttk.Entry(input_box, width=30)
         self.entry_url.grid(row=0, column=1, padx=5)
-        self.entry_url.insert(0, "google.com") # Placeholder comodo
+        self.entry_url.insert(0, "google.com")
 
-        ttk.Label(input_group, text="Anno:").grid(row=0, column=2, sticky="w", padx=(10, 5))
-        self.entry_anno = ttk.Entry(input_group, width=10)
+        ttk.Label(input_box, text="Anno:").grid(row=0, column=2, padx=5)
+        self.entry_anno = ttk.Entry(input_box, width=10)
         self.entry_anno.grid(row=0, column=3, padx=5)
-        self.entry_anno.insert(0, str(datetime.now().year - 10)) 
+        self.entry_anno.insert(0, "2015")
 
-        # Bottone Cerca
-        self.btn_cerca = ttk.Button(input_group, text="🔍 Avvia Analisi", command=self.fai_ricerca, bootstyle=PRIMARY)
-        self.btn_cerca.grid(row=0, column=4, padx=15)
+        # Bottoni (Primary = Blu, Info = Azzurro)
+        btn_cerca = ttk.Button(input_box, text="Cerca", command=self.avvia_ricerca, bootstyle="primary")
+        btn_cerca.grid(row=0, column=4, padx=15)
 
-        # Bottone Cronologia
-        self.btn_history = ttk.Button(input_group, text="📂 Cronologia", command=self.mostra_cronologia, bootstyle="info-outline")
-        self.btn_history.grid(row=0, column=5, padx=5)
+        btn_storia = ttk.Button(input_box, text="Cronologia", command=self.apri_cronologia, bootstyle="info-outline")
+        btn_storia.grid(row=0, column=5, padx=5)
 
-        # --- PROGRESS BAR (Nascosta inizialmente) ---
-        self.progress = ttk.Progressbar(self.root, mode='indeterminate', bootstyle=SUCCESS)
+        # --- BARRA STATO E CARICAMENTO ---
+        self.lbl_status = ttk.Label(root, text="Pronto.", bootstyle="inverse", padding=5)
+        self.lbl_status.pack(side="bottom", fill="x")
 
-        # --- SEZIONE 2: RISULTATI (Split in due parti) ---
-        results_container = ttk.Frame(main_container)
-        results_container.pack(fill=BOTH, expand=YES)
+        # Barra di caricamento (inizialmente nascosta)
+        self.progress = ttk.Progressbar(root, mode='indeterminate', bootstyle="success")
+
+        # --- SEZIONE 2: RISULTATI ---
+        result_box = ttk.Frame(main_frame)
+        result_box.pack(fill="both", expand=True)
 
         # Sinistra: WHOIS
-        # CORREZIONE QUI: Labelframe con la 'f' minuscola
-        whois_frame = ttk.Labelframe(results_container, text=" Dati Anagrafici (WHOIS) ", padding=10)
-        whois_frame.pack(side=LEFT, fill=BOTH, expand=YES, padx=(0, 5))
+        left_frame = ttk.Labelframe(result_box, text=" Dati Whois ", padding=10)
+        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
         
-        self.text_whois = scrolledtext.ScrolledText(whois_frame, height=15, width=40, font=("Consolas", 9))
-        self.text_whois.pack(fill=BOTH, expand=YES)
+        self.text_whois = scrolledtext.ScrolledText(left_frame, height=15, width=40)
+        self.text_whois.pack(fill="both", expand=True)
 
         # Destra: SNAPSHOT
-        # CORREZIONE QUI: Labelframe con la 'f' minuscola
-        wayback_frame = ttk.Labelframe(results_container, text=" Snapshot Storici ", padding=10)
-        wayback_frame.pack(side=RIGHT, fill=BOTH, expand=YES, padx=(5, 0))
+        right_frame = ttk.Labelframe(result_box, text=" Snapshot Storici ", padding=10)
+        right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
 
-        # Listbox con Scrollbar
-        list_scroll = ttk.Scrollbar(wayback_frame, bootstyle="round")
-        list_scroll.pack(side=RIGHT, fill=Y)
+        # Lista con scrollbar
+        scroll = ttk.Scrollbar(right_frame, bootstyle="round")
+        scroll.pack(side="right", fill="y")
         
-        self.list_snapshot = tk.Listbox(wayback_frame, height=15, width=40, font=("Arial", 10), yscrollcommand=list_scroll.set)
-        self.list_snapshot.pack(side=LEFT, fill=BOTH, expand=YES)
-        self.list_snapshot.bind('<Double-1>', self.apri_selezione)
+        self.list_snapshot = tk.Listbox(right_frame, height=15, width=40, yscrollcommand=scroll.set)
+        self.list_snapshot.pack(side="left", fill="both", expand=True)
+        self.list_snapshot.bind('<Double-1>', self.clicca_snapshot)
         
-        list_scroll.config(command=self.list_snapshot.yview)
+        scroll.config(command=self.list_snapshot.yview)
 
-        self.risultati_correnti = []
+        # Variabile per memorizzare i link trovati
+        self.lista_dati = []
 
-        # --- BARRA DI STATO ---
-        self.lbl_status = ttk.Label(root, text="Pronto.", bootstyle=INVERSE, padding=5)
-        self.lbl_status.pack(side=BOTTOM, fill=X)
-
-    def fai_ricerca(self):
-        """Logica di ricerca con gestione UI"""
+    def avvia_ricerca(self):
         url = self.entry_url.get().strip()
         anno = self.entry_anno.get().strip()
 
         if not url or not anno:
-            messagebox.showwarning("Dati Mancanti", "Inserisci sia URL che Anno.")
+            messagebox.showwarning("Attenzione", "Inserisci URL e Anno.")
             return
 
-        self.lbl_status.config(text=f"Analisi in corso per {url} ({anno})...")
-        self.progress.pack(fill=X, pady=5, before=self.lbl_status)
-        self.progress.start(15)
+        # Avvio animazione caricamento
+        self.lbl_status.config(text="Ricerca in corso...")
+        self.progress.pack(fill="x", pady=5, before=self.lbl_status)
+        self.progress.start(10)
         self.root.update()
 
         try:
-            # 1. WHOIS
+            # 1. Whois
             self.text_whois.delete(1.0, tk.END)
-            self.text_whois.insert(tk.END, "⏳ Interrogazione database registrar in corso...\n")
+            self.text_whois.insert(tk.END, "Caricamento dati...\n")
             self.root.update()
             
-            info_whois = ottieni_info_dominio(url)
+            info = ottieni_info_dominio(url)
             self.text_whois.delete(1.0, tk.END)
-            self.text_whois.insert(tk.END, info_whois)
+            self.text_whois.insert(tk.END, info)
 
-            # 2. WAYBACK
+            # 2. Wayback Machine
             self.list_snapshot.delete(0, tk.END)
-            self.risultati_correnti = cerca_snapshot(url, anno)
+            self.lista_dati = cerca_snapshot(url, anno)
             
-            esito_db = "Nessun risultato"
+            esito = "Nessun risultato"
 
-            if self.risultati_correnti:
-                esito_db = f"{len(self.risultati_correnti)} snapshot trovati"
-                for idx, res in enumerate(self.risultati_correnti):
-                    self.list_snapshot.insert(tk.END, f"{res['data']}")
-                self.lbl_status.config(text=f"✅ Completato: {len(self.risultati_correnti)} snapshot trovati.")
+            if self.lista_dati:
+                esito = f"{len(self.lista_dati)} snapshot trovati"
+                for snapshot in self.lista_dati:
+                    self.list_snapshot.insert(tk.END, snapshot['data'])
+                self.lbl_status.config(text=f"Operazione completata. Trovati: {len(self.lista_dati)}")
             else:
-                self.list_snapshot.insert(tk.END, "Nessuno snapshot disponibile.")
-                self.lbl_status.config(text="⚠️ Nessun risultato trovato.")
+                self.list_snapshot.insert(tk.END, "Nessuno snapshot trovato.")
+                self.lbl_status.config(text="Nessun risultato.")
 
-            # 3. SALVATAGGIO
-            salva_ricerca(url, anno, esito_db)
-            accoda_su_csv(url, anno, esito_db) 
+            # 3. Salvataggio doppio (DB + CSV)
+            salva_ricerca(url, anno, esito)
+            accoda_su_csv(url, anno, esito)
+
         except Exception as e:
-            self.lbl_status.config(text="❌ Errore critico.")
-            messagebox.showerror("Errore", f"Si è verificato un problema:\n{e}")
+            self.lbl_status.config(text="Errore.")
+            messagebox.showerror("Errore", str(e))
 
         finally:
+            # Ferma caricamento
             self.progress.stop()
             self.progress.pack_forget()
 
-    def apri_selezione(self, event):
-        selection = self.list_snapshot.curselection()
-        if selection:
-            index = selection[0]
-            if index < len(self.risultati_correnti):
-                snapshot = self.risultati_correnti[index]
-                self.lbl_status.config(text=f"Apertura browser: {snapshot['data']}")
-                apri_browser(snapshot['link'])
+    def clicca_snapshot(self, event):
+        selezione = self.list_snapshot.curselection()
+        if selezione:
+            index = selezione[0]
+            if index < len(self.lista_dati):
+                link = self.lista_dati[index]['link']
+                apri_browser(link)
 
-    def mostra_cronologia(self):
+    def apri_cronologia(self):
+        # Finestra popup per vedere il database
         top = ttk.Toplevel(self.root)
-        top.title("Cronologia Ricerche")
+        top.title("Cronologia")
         top.geometry("700x400")
 
-        columns = ('id', 'url', 'anno', 'esito', 'data')
-        tree = ttk.Treeview(top, columns=columns, show='headings', bootstyle=INFO)
+        colonne = ('id', 'url', 'anno', 'esito', 'data')
+        tree = ttk.Treeview(top, columns=colonne, show='headings', bootstyle="info")
 
         tree.heading('id', text='ID')
-        tree.heading('url', text='URL')
-        tree.heading('anno', text='Anno Rif.')
+        tree.heading('url', text='Sito')
+        tree.heading('anno', text='Anno')
         tree.heading('esito', text='Risultato')
-        tree.heading('data', text='Data Esecuzione')
+        tree.heading('data', text='Data Ricerca')
 
+        # Larghezza colonne
         tree.column('id', width=40)
         tree.column('url', width=150)
-        tree.column('anno', width=80)
-        tree.column('esito', width=200)
-        tree.column('data', width=150)
-
+        
+        # Scrollbar verticale
         scroll = ttk.Scrollbar(top, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scroll.set)
-        
-        scroll.pack(side=RIGHT, fill=Y)
-        tree.pack(fill=BOTH, expand=YES)
+        scroll.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
 
+        # Leggiamo dal DB
         dati = leggi_cronologia()
         for riga in dati:
             tree.insert('', tk.END, values=riga)
 
     def esporta_csv(self):
-        dati = leggi_cronologia()
-        filename = f"export_timebrowser_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+        # Funzione veloce per esportare tutto il DB in un file
+        import csv
+        filename = f"export_{datetime.now().strftime('%H%M%S')}.csv"
         try:
-            with open(filename, mode='w', newline='', encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(["ID", "URL", "Anno Target", "Esito", "Timestamp"])
+            dati = leggi_cronologia()
+            with open(filename, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(["ID", "URL", "Anno", "Esito", "Data"])
                 writer.writerows(dati)
-            messagebox.showinfo("Export Riuscito", f"File salvato nella cartella del progetto:\n{filename}")
+            messagebox.showinfo("Fatto", f"Esportato in: {filename}")
         except Exception as e:
-            messagebox.showerror("Errore Export", f"Impossibile salvare il file: {e}")
+            messagebox.showerror("Errore", str(e))
